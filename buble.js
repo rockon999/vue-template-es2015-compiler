@@ -15116,19 +15116,43 @@ var OptionalMemberExpression = (function (Node) {
 	OptionalMemberExpression.prototype.transpile = function transpile (code, transforms) {
 		Node.prototype.transpile.call(this, code, transforms);
 
-		function buildChain(_obj) {
-			var obj = _obj;
+		function buildChain(expr) {
+			var computed = expr.computed;
 			var chain = [];
-			if (obj.name) {
-				chain.push(obj.name);
-			} else if (obj.object) {
-				chain.push.apply(chain, buildChain(obj.object).concat( [obj.property.name] ));
+
+			if (expr.name) {
+				chain.push(expr.name);
+			} else if (expr.object && expr.property) {
+				var object = expr.object;
+				var property = expr.property;
+
+				if (property.type === 'Literal') {
+					chain.push.apply(chain, buildChain(object).concat( [("[" + (property.raw) + "]")] ));
+				} else if (property.type === 'Identifier') {
+					chain.push.apply(chain, buildChain(object).concat( [computed ? ("[" + (property.name) + "]") : property.name] ));
+				} else {
+					throw new CompileError(("Unknown property type found in OptionalMemberExpression: " + (property.type)));
+				}
+			} else {
+				throw new CompileError(("Unknown expression type passed to OptionalMemberExpression: " + (expr.type)));
 			}
+
 			return chain;
 		}
-		var chain = buildChain(this.object).concat( [this.property.name]);
-		code.prependLeft(this.object.start, '(');
-		code.overwrite(this.object.end, this.property.end, (" == null ? void 0 : " + (chain.join('.')) + ")"));
+
+		function stringifyChain(chain) {
+			return chain.slice(1).reduce(function (prev, next) {
+				if (next.startsWith('[')) {
+					return ("" + prev + next);
+				} else {
+					return (prev + "." + next);
+				}
+			}, chain[0]);
+		}
+
+		var chain = [].concat( buildChain(this) );
+		code.prependLeft(this.start, '(');
+		code.overwrite(this.object.end, this.end, (" == null ? void 0 : " + (stringifyChain(chain)) + ")"));
 	};
 
 	return OptionalMemberExpression;
