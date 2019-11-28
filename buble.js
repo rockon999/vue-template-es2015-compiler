@@ -5811,7 +5811,6 @@ function optionalChaining(BaseParser) {
   const Parser$$1 = class extends BaseParser {
     // from babel-parser: src/tokenizer/index.js
     readToken_question() {
-      console.log('reading question mark...');
       // '?'
       // this.state -> this
       const next = this.input.charCodeAt(this.pos + 1);
