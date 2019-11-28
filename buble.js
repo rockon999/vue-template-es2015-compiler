@@ -15114,6 +15114,8 @@ var OptionalMemberExpression = (function (Node) {
 	OptionalMemberExpression.prototype.constructor = OptionalMemberExpression;
 
 	OptionalMemberExpression.prototype.transpile = function transpile (code, transforms) {
+		Node.prototype.transpile.call(this, code, transforms);
+
 		function buildChain(_obj) {
 			var obj = _obj;
 			var chain = [];
@@ -15127,8 +15129,6 @@ var OptionalMemberExpression = (function (Node) {
 		var chain = buildChain(this.object).concat( [this.property.name]);
 		code.prependLeft(this.object.start, '(');
 		code.overwrite(this.object.end, this.property.end, (" == null ? void 0 : " + (chain.join('.')) + ")"));
-
-		Node.prototype.transpile.call(this, code, transforms);
 	};
 
 	return OptionalMemberExpression;
